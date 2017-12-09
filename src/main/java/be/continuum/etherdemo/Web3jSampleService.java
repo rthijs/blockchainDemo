@@ -1,18 +1,19 @@
 package be.continuum.etherdemo;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
+
+import org.bouncycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.ECKeyPair;
+import org.web3j.crypto.RawTransaction;
+import org.web3j.crypto.TransactionEncoder;
 import org.web3j.crypto.WalletUtils;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.admin.Admin;
@@ -21,6 +22,7 @@ import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthAccounts;
 import org.web3j.protocol.core.methods.response.EthGetBalance;
 import org.web3j.protocol.core.methods.response.EthGetTransactionCount;
+import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.core.methods.response.EthTransaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.core.methods.response.Web3ClientVersion;
@@ -39,6 +41,9 @@ public class Web3jSampleService {
 
 	@Autowired
 	private Web3j web3j;
+	
+	private static BigInteger GAS_PRICE = BigInteger.valueOf(30000000000L); // 30Gwei
+	private static BigInteger GAS_LIMIT = BigInteger.valueOf(21000L);		// cost for one simple transaction
 
 	public String getClientVersion() throws IOException {
 		Web3ClientVersion web3ClientVersion = web3j.web3ClientVersion().send();
@@ -151,7 +156,7 @@ public class Web3jSampleService {
 
 	}
 	
-	public void sendTransactionWithData() throws IOException, CipherException {
+	public void sendTransactionWithData() throws IOException, CipherException, InterruptedException, ExecutionException {
 		URL dinges = getClass().getResource("/007c5a80fb694a02cc201a13bbf55bab83349293.wallet");
 		Credentials credentials = WalletUtils.loadCredentials("sivlaw", dinges.getPath());
 		
@@ -162,18 +167,17 @@ public class Web3jSampleService {
 				credentials.getAddress(), DefaultBlockParameterName.LATEST).sendAsync().get();
 		
 		BigInteger nonce = ethGetTransactionCount.getTransactionCount();
-
+		
+		String data = "aaa";
+		
 		// create our transaction
-		//RawTransaction rawTransaction  = RawTransaction.createEtherTransaction( nonce, <gas price>, <gas limit>, <toAddress>, <value>);
+		RawTransaction rawTransaction  = RawTransaction.createTransaction( nonce, GAS_PRICE, GAS_LIMIT, "0x3a75b6cda8c06b6806e5117d18d53a8dd55a95e4", BigInteger.valueOf(1000000000000000L), data);
 
 		// sign & send our transaction
 		byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
 		String hexValue = Hex.toHexString(signedMessage);
 		EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
 		
-	}
-	    public static RawTransaction createTransaction(
-	            BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String to,
-	BigInteger value, String data) {
+		System.out.println("Transaction Hash = " + ethSendTransaction.getTransactionHash());
 	}
 }

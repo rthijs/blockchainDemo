@@ -36,6 +36,8 @@ public class RoelTest {
 		
 		web3jSampleService.sendTransaction();
 		
+		web3jSampleService.sendTransactionWithData();
+		
 		
 	}
 }
